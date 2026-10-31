@@ -241,8 +241,7 @@ const styles = StyleSheet.create({
   headerTop: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
+    gap: space.sm,
   },
   unit: { alignItems: 'center' },
   banner: {
