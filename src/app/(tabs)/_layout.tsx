@@ -11,15 +11,15 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarActiveTintColor: palette.emerald,
+        tabBarInactiveTintColor: theme.inkFaint,
+        tabBarLabelStyle: { fontFamily: font.bold, fontSize: 12, lineHeight: 18 },
         tabBarStyle: {
           backgroundColor: theme.bg,
           borderTopColor: theme.border,
           borderTopWidth: StyleSheet.hairlineWidth,
           elevation: 0,
         },
-        tabBarActiveTintColor: palette.emerald,
-        tabBarInactiveTintColor: theme.inkFaint,
-        tabBarLabelStyle: { fontFamily: font.bold, fontSize: 12 },
       }}
     >
       <Tabs.Screen
