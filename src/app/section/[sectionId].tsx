@@ -118,12 +118,12 @@ export default function SectionScreen() {
             >
               <Icon name="arrow-back" size={24} color="#ffffff" />
             </Pressable>
-            <Txt size="caption" weight="semibold" color="rgba(255,255,255,0.85)">
-              {section.subtitle} · ص {section.pages[0]}–{section.pages[1]}
+            <Txt weight="black" size="title" color="#ffffff">
+              {section.title}
             </Txt>
           </View>
-          <Txt weight="black" size="display" color="#ffffff">
-            {section.title}
+          <Txt size="caption" weight="semibold" color="rgba(255,255,255,0.75)">
+            {section.subtitle} · ص {section.pages[0]}–{section.pages[1]}
           </Txt>
           <AnimatedBar
             pct={pct}

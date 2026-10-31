@@ -138,7 +138,7 @@ const icons: Record<IconName, Renderer> = {
   'arrow-back': ({ size, color }) => (
     <Svg {...base(size)}>
       <Path
-        d="M10 19l-7-7 7-7M3 12h18"
+        d="M14 5l7 7-7 7M21 12H3"
         stroke={color}
         strokeWidth={2.5}
         strokeLinecap="round"
