@@ -23,7 +23,10 @@ export type IconName =
   | 'star'
   | 'check-badge'
   | 'true'
-  | 'false';
+  | 'false'
+  | 'chart'
+  | 'book'
+  | 'arrow-forward';
 
 export function Icon({ name, size = 24, color = '#ffffff' }: Props) {
   const svg = icons[name];
@@ -226,6 +229,40 @@ const icons: Record<IconName, Renderer> = {
         stroke={color}
         strokeWidth={2.5}
         strokeLinecap="round"
+      />
+    </Svg>
+  ),
+
+  chart: ({ size, color }) => (
+    <Svg {...base(size)}>
+      <Rect x={3} y={14} width={4} height={7} rx={1} fill={color} />
+      <Rect x={10} y={9} width={4} height={12} rx={1} fill={color} />
+      <Rect x={17} y={3} width={4} height={18} rx={1} fill={color} />
+    </Svg>
+  ),
+
+  book: ({ size, color }) => (
+    <Svg {...base(size)}>
+      <Path
+        d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5V4.5Z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinejoin="round"
+      />
+      <Path d="M4 18h16v2.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 20.5V18Z" fill={color} opacity={0.3} />
+      <Line x1={8} y1={6} x2={16} y2={6} stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+      <Line x1={8} y1={10} x2={13} y2={10} stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+    </Svg>
+  ),
+
+  'arrow-forward': ({ size, color }) => (
+    <Svg {...base(size)}>
+      <Path
+        d="M10 19l-7-7 7-7M3 12h18"
+        stroke={color}
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </Svg>
   ),

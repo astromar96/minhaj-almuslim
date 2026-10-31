@@ -1,5 +1,6 @@
-import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Redirect, useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedBar } from '@/components/AnimatedBar';
@@ -12,12 +13,20 @@ import { allLessons, flatten, type Section } from '@/engine/types';
 import { useProgress } from '@/store/progress';
 import { LIP, radius, space, unitColors } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
+import { ONBOARDED_KEY } from '@/app/welcome';
 
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isDone, ready } = useProgress();
+  const [onboarded, setOnboarded] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(ONBOARDED_KEY)
+      .then((v) => setOnboarded(v === '1'))
+      .catch(() => setOnboarded(true));
+  }, []);
 
   const total = useMemo(() => allLessons(curriculum).length, []);
   const done = useMemo(
@@ -26,7 +35,8 @@ export default function HomeScreen() {
   );
   const pct = total ? Math.round((done / total) * 100) : 0;
 
-  if (!ready) return <View style={[styles.fill, { backgroundColor: theme.bg }]} />;
+  if (onboarded === null || !ready) return <View style={[styles.fill, { backgroundColor: theme.bg }]} />;
+  if (!onboarded) return <Redirect href="/welcome" />;
 
   return (
     <View style={[styles.fill, { backgroundColor: theme.bg }]}>

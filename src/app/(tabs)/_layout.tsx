@@ -30,6 +30,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: 'إحصائيات',
+          tabBarIcon: ({ color, size }) => <Icon name="chart" size={size} color={color as string} />,
+        }}
+      />
+      <Tabs.Screen
         name="account"
         options={{
           title: 'حسابي',
