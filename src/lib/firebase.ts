@@ -1,7 +1,7 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAuth, initializeAuth, type Auth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { persistence } from './authPersistence';
+import { persistence, popupRedirectResolver } from './authPersistence';
 
 /**
  * إعداد تطبيق الويب في Firebase.
@@ -51,7 +51,7 @@ export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
  */
 function authInstance(): Auth {
   try {
-    return initializeAuth(app, { persistence });
+    return initializeAuth(app, { persistence, popupRedirectResolver });
   } catch {
     return getAuth(app);
   }
