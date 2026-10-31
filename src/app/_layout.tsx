@@ -73,8 +73,7 @@ function Shell() {
           animation: Platform.OS === 'web' ? 'none' : 'slide_from_left',
         }}
       >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="account" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
         <Stack.Screen name="section/[sectionId]" />
         <Stack.Screen name="lesson/[unitId]/[lessonId]" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       </Stack>

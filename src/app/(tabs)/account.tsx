@@ -27,22 +27,14 @@ export default function AccountScreen() {
   const { account, ready, busy, error, social, clearError, leave } = useAuth();
   const { doneCount, xp, streak } = useProgress();
 
-  const close = () => {
-    if (router.canGoBack()) router.back();
-    else router.replace('/');
-  };
+  const goHome = () => router.navigate('/');
 
   return (
     <View style={[styles.fill, { backgroundColor: theme.bg }]}>
       <View style={[styles.head, { paddingTop: insets.top + space.md, borderBottomColor: theme.border }]}>
         <Txt weight="black" size="title">
-          {account ? 'حسابك' : 'احفظ تقدّمك'}
+          {account && !account.guest ? 'حسابي' : 'احفظ تقدّمك'}
         </Txt>
-        <Pressable accessibilityRole="button" accessibilityLabel="إغلاق" onPress={close} hitSlop={12}>
-          <Txt size="title" color={theme.inkSoft}>
-            ✕
-          </Txt>
-        </Pressable>
       </View>
 
       <ScrollView
@@ -77,14 +69,13 @@ export default function AccountScreen() {
             }}
           />
         ) : (
-          <SignIn guest={!!account?.guest} busy={busy} social={social} onDone={close} onTyping={clearError} />
+          <SignIn guest={!!account?.guest} busy={busy} social={social} onDone={goHome} onTyping={clearError} />
         )}
       </ScrollView>
     </View>
   );
 }
 
-/** حساب قائم: ما يعرّفه، وزرّ الخروج. */
 function SignedIn({
   name,
   email,
@@ -120,7 +111,6 @@ function SignedIn({
   );
 }
 
-/** لا حساب بعدُ، أو ضيف يريد ترقية حسابه. */
 function SignIn({
   guest,
   busy,
@@ -274,7 +264,6 @@ function Field({
   label: string;
   value: string;
   onChange: (value: string) => void;
-  /** حقل لاتيني — يُكتب من اليسار ويبقى محاذيًا لليمين كبقيّة الواجهة. */
   latin?: boolean;
 } & Omit<React.ComponentProps<typeof TextInput>, 'value' | 'onChange' | 'onChangeText' | 'style'>) {
   const theme = useTheme();
@@ -302,9 +291,7 @@ function Field({
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   head: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    alignItems: 'flex-end',
     paddingHorizontal: space.lg,
     paddingBottom: space.md,
     borderBottomWidth: StyleSheet.hairlineWidth,

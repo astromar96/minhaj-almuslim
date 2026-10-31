@@ -1,10 +1,14 @@
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { AnimatedBar } from '@/components/AnimatedBar';
 import { Button } from '@/components/Button';
+import { Confetti } from '@/components/Confetti';
 import { Glossary, GlossaryNote } from '@/components/Glossary';
+import { Icon } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
 import { isAnswerComplete, QuestionView } from '@/components/questions';
 import { curriculum } from '@/content';
@@ -25,11 +29,6 @@ import { useProgress } from '@/store/progress';
 import { palette, radius, space, unitColors } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
-/**
- * يُصدِّر صفحة ثابتة لكل درس عند `expo export --platform web`.
- * بدونهَا يُخرَج المسار كملف واحد اسمه `[unitId]/[lessonId].html`، فتُعيد أي
- * استضافة ثابتة 404 لرابط مباشر مثل /lesson/u01/u01l1.
- */
 export async function generateStaticParams(): Promise<Record<string, string>[]> {
   return allUnits(curriculum).flatMap((unit) =>
     unit.lessons.map((lesson) => ({ unitId: unit.id, lessonId: lesson.id })),
@@ -62,6 +61,19 @@ export default function LessonScreen() {
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [phase, setPhase] = useState<Phase>({ kind: 'answering' });
 
+  const feedbackAnim = useSharedValue(0);
+  useEffect(() => {
+    if (phase.kind === 'checked') {
+      feedbackAnim.value = withTiming(1, { duration: 300 });
+    } else {
+      feedbackAnim.value = 0;
+    }
+  }, [phase.kind]);
+  const feedbackStyle = useAnimatedStyle(() => ({
+    opacity: feedbackAnim.value,
+    transform: [{ translateY: (1 - feedbackAnim.value) * 12 }],
+  }));
+
   const close = useCallback(() => {
     if (router.canGoBack()) router.back();
     else router.replace('/');
@@ -83,13 +95,10 @@ export default function LessonScreen() {
   const item = currentItem(session);
   const seed = `${lesson.id}:${item ? lesson.items.indexOf(item) : 0}`;
 
-  // ── نفدت القلوب ───────────────────────────────────────────────
   if (hearts <= 0 && phase.kind !== 'finished') {
     return (
       <Centered>
-        <Txt size="hero" center>
-          💔
-        </Txt>
+        <Icon name="heart-broken" size={64} color={palette.ruby} />
         <Txt weight="bold" size="title" center>
           نفدت القلوب
         </Txt>
@@ -101,14 +110,16 @@ export default function LessonScreen() {
     );
   }
 
-  // ── انتهى الدرس ───────────────────────────────────────────────
   if (phase.kind === 'finished' || !item) {
     const gained = finalXp(session);
     return (
       <Centered>
-        <Txt size="hero" center>
-          {session.mistakes === 0 ? '🏅' : '✨'}
-        </Txt>
+        <Confetti />
+        <Icon
+          name={session.mistakes === 0 ? 'medal' : 'sparkle'}
+          size={64}
+          color={session.mistakes === 0 ? palette.gold : tint}
+        />
         <Txt weight="black" size="display" center>
           أتممتَ الدرس
         </Txt>
@@ -137,7 +148,6 @@ export default function LessonScreen() {
     );
   }
 
-  // ── عنصر تعليمي ───────────────────────────────────────────────
   const onInfoNext = () => {
     const next = advance(session, { kind: 'info' });
     setSession(next);
@@ -176,16 +186,17 @@ export default function LessonScreen() {
     <View style={[styles.fill, { backgroundColor: theme.bg, paddingTop: insets.top + space.sm }]}>
       <View style={styles.topBar}>
         <Pressable accessibilityRole="button" accessibilityLabel="إغلاق الدرس" onPress={close} hitSlop={12}>
-          <Txt size="title" color={theme.inkFaint}>
-            ✕
-          </Txt>
+          <Icon name="close" size={22} color={theme.inkFaint} />
         </Pressable>
-        <View style={[styles.track, { backgroundColor: theme.surfaceAlt }]}>
-          <View style={[styles.trackFill, { width: `${pct}%`, backgroundColor: tint }]} />
+        <View style={styles.trackWrap}>
+          <AnimatedBar pct={pct} height={14} trackColor={theme.surfaceAlt} fillColor={tint} fillOpacity={1} />
         </View>
-        <Txt weight="bold" color={hearts <= 2 ? '#e5484d' : theme.inkSoft}>
-          ❤️ {hearts}
-        </Txt>
+        <View style={styles.heartsRow}>
+          <Icon name="heart" size={18} color={hearts <= 2 ? palette.ruby : theme.inkSoft} />
+          <Txt weight="bold" size="small" color={hearts <= 2 ? palette.ruby : theme.inkSoft}>
+            {hearts}
+          </Txt>
+        </View>
       </View>
 
       <ScrollView
@@ -240,24 +251,32 @@ export default function LessonScreen() {
         ]}
       >
         {revealed && isQuestion(item) ? (
-          <View style={styles.feedback}>
-            <Txt weight="black" size="lead" color={phase.correct ? theme.correctInk : theme.wrongInk}>
-              {phase.correct ? '✓ أحسنت' : `✕ الصواب: ${correctAnswerText(item)}`}
-            </Txt>
-            <Txt size="small" color={phase.correct ? theme.correctInk : theme.wrongInk}>
-              {item.e}
-            </Txt>
-            <GlossaryNote item={item} ink={phase.correct ? theme.correctInk : theme.wrongInk} />
-            <Txt size="caption" color={phase.correct ? theme.correctInk : theme.wrongInk} style={styles.src}>
-              منهاج المسلم، ص {item.src}
-            </Txt>
-          </View>
+          <Animated.View style={feedbackStyle}>
+            <View style={styles.feedback}>
+              <View style={styles.feedbackTitle}>
+                <Icon
+                  name={phase.correct ? 'check' : 'close'}
+                  size={20}
+                  color={phase.correct ? theme.correctInk : theme.wrongInk}
+                />
+                <Txt weight="black" size="lead" color={phase.correct ? theme.correctInk : theme.wrongInk}>
+                  {phase.correct ? 'أحسنت' : `الصواب: ${correctAnswerText(item)}`}
+                </Txt>
+              </View>
+              <Txt size="small" color={phase.correct ? theme.correctInk : theme.wrongInk}>
+                {item.e}
+              </Txt>
+              <GlossaryNote item={item} ink={phase.correct ? theme.correctInk : theme.wrongInk} />
+              <Txt size="caption" color={phase.correct ? theme.correctInk : theme.wrongInk} style={styles.src}>
+                منهاج المسلم، ص {item.src}
+              </Txt>
+            </View>
+          </Animated.View>
         ) : null}
 
         {item.t === 'info' ? (
           <Button label="فهمت" onPress={onInfoNext} tint={tint} />
         ) : revealed ? (
-          // لون الحكم لا لون الوحدة: أخضر للصواب وأحمر للخطأ، كيلا يناقض الزرُّ لوحةَ التغذية الراجعة.
           <Button
             label="متابعة"
             onPress={onContinue}
@@ -323,9 +342,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
     paddingBottom: space.md,
   },
-  track: { flex: 1, height: 14, borderRadius: radius.pill, overflow: 'hidden' },
-  // يمتلئ الشريط من اليمين لليسار موافقةً لاتجاه القراءة.
-  trackFill: { position: 'absolute', right: 0, top: 0, bottom: 0, borderRadius: radius.pill },
+  trackWrap: { flex: 1 },
+  heartsRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: space.xs },
   body: { paddingHorizontal: space.lg, gap: space.lg },
   prompt: { marginBottom: space.xs },
   infoCard: { borderRadius: radius.lg, borderWidth: 2, padding: space.lg, gap: space.sm },
@@ -337,6 +355,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   feedback: { gap: space.xs },
+  feedbackTitle: { flexDirection: 'row-reverse', alignItems: 'center', gap: space.sm },
   src: { opacity: 0.75 },
   scoreRow: { flexDirection: 'row-reverse', gap: space.lg, marginTop: space.sm },
   score: {

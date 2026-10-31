@@ -9,7 +9,9 @@ import {
   type ScrollViewInstance,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AnimatedBar } from '@/components/AnimatedBar';
 import { Hud } from '@/components/Hud';
+import { Icon } from '@/components/Icon';
 import { PathNodeButton, type NodeState } from '@/components/PathNodeButton';
 import { Txt } from '@/components/Txt';
 import { curriculum } from '@/content';
@@ -20,11 +22,9 @@ import { useProgress } from '@/store/progress';
 import { radius, space, unitColors } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
-/** إزاحة أفقية متعرّجة تعطي المسار شكل الأفعى: 0, +1, 0, -1, ... */
 const WEAVE = [0, 1, 0, -1];
 const WEAVE_PX = 56;
 
-/** يُصدِّر صفحة ثابتة لكل باب عند `expo export --platform web`. */
 export async function generateStaticParams(): Promise<Record<string, string>[]> {
   return curriculum.sections.map((section) => ({ sectionId: section.id }));
 }
@@ -40,21 +40,12 @@ export default function SectionScreen() {
     () => curriculum.sections.find((s) => s.id === routeId(sectionId)) ?? null,
     [sectionId],
   );
-  // الفتح متسلسل داخل الباب وحده، فكل باب يُبدأ من أوّله مهما كان حال غيره.
   const nodes = useMemo(() => (section ? flatten(section) : []), [section]);
   const currentIndex = useMemo(() => {
     const i = nodes.findIndex((n) => !isDone(n.key));
     return i === -1 ? nodes.length : i;
   }, [nodes, isDone]);
 
-  /**
-   * الباب الواحد قد يبلغ مئةً وخمسين درسًا، ففتحُه على أوّله يترك القارئ
-   * يمرّر طويلًا ليبلغ موضعه، فنقفز إلى الدرس المفتوح عند فتح الباب.
-   *
-   * الموضع يأتي من قياسين: موضعُ الوحدة في المحتوى، وموضعُ الصفّ داخلها.
-   * `onLayout` الابنِ يسبق `onLayout` الأبِ، فلا يصحّ جمعُهما عند الابن —
-   * كان الأبُ حينها ما يزال عند الصفر. نجمعهما هنا بعد ورودهما معًا.
-   */
   const scroller = useRef<ScrollViewInstance>(null);
   const unitTops = useRef<Record<string, number>>({});
   const currentRow = useRef<{ unitId: string; y: number } | null>(null);
@@ -77,9 +68,7 @@ export default function SectionScreen() {
     const top = unitTops.current[row.unitId];
     if (top === undefined) return;
     jumped.current = true;
-    // إطارٌ واحد ريثما يستقرّ ارتفاع المحتوى، وإلا قُصَّ الهدف إلى الصفر.
     const id = requestAnimationFrame(() =>
-      // نترك مساحةً فوقه ليظهر عنوانُ وحدته معه.
       scroller.current?.scrollTo({ y: Math.max(0, top + row.y - 160), animated: false }),
     );
     return () => cancelAnimationFrame(id);
@@ -127,9 +116,7 @@ export default function SectionScreen() {
               onPress={back}
               hitSlop={12}
             >
-              <Txt size="title" color="#ffffff">
-                ↩
-              </Txt>
+              <Icon name="arrow-back" size={24} color="#ffffff" />
             </Pressable>
             <Txt size="caption" weight="semibold" color="rgba(255,255,255,0.85)">
               {section.subtitle} · ص {section.pages[0]}–{section.pages[1]}
@@ -138,9 +125,14 @@ export default function SectionScreen() {
           <Txt weight="black" size="display" color="#ffffff">
             {section.title}
           </Txt>
-          <View style={styles.bar}>
-            <View style={[styles.barFill, { width: `${pct}%` }]} />
-          </View>
+          <AnimatedBar
+            pct={pct}
+            height={10}
+            trackColor="rgba(0,0,0,0.18)"
+            fillColor="#ffffff"
+            fillOpacity={0.9}
+            style={{ marginTop: space.sm }}
+          />
           <Txt size="caption" color="rgba(255,255,255,0.85)">
             أتممتَ {done} من {counted(nodes.length, LESSON)}
           </Txt>
@@ -176,9 +168,7 @@ function UnitSection({
   unitIndex: number;
   nodes: ReturnType<typeof flatten>;
   currentIndex: number;
-  /** موضع هذه الوحدة داخل محتوى المسار. */
   onUnitTop: (unitId: string, y: number) => void;
-  /** موضع صفّ الدرس المفتوح داخل هذه الوحدة. */
   onCurrentRow: (unitId: string, y: number) => void;
   onOpen: (unitId: string, lessonId: string) => void;
 }) {
@@ -212,8 +202,6 @@ function UnitSection({
             key={lesson.id}
             style={[styles.row, { transform: [{ translateX: offset }] }]}
             onLayout={
-              // الدرس الأوّل في الباب لا يُقفز إليه: لا شيء فوقه يُتخطَّى،
-              // والقفزُ يدفع ترويسةَ الباب خارج الشاشة بلا فائدة.
               flatIndex === currentIndex && currentIndex > 0
                 ? (e: LayoutChangeEvent) => onCurrentRow(unit.id, e.nativeEvent.layout.y)
                 : undefined
@@ -256,16 +244,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
   },
-  bar: {
-    width: '100%',
-    height: 10,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(0,0,0,0.18)',
-    overflow: 'hidden',
-    marginTop: space.sm,
-  },
-  // يبدأ الامتلاء من اليمين، موافقةً لاتجاه القراءة.
-  barFill: { position: 'absolute', right: 0, top: 0, bottom: 0, backgroundColor: '#ffffff', opacity: 0.9 },
   unit: { alignItems: 'center' },
   banner: {
     width: '100%',

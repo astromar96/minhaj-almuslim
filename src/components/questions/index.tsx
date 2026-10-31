@@ -10,11 +10,9 @@ import { Choice, type ChoiceTone } from './Choice';
 
 export type QuestionProps = {
   question: Question;
-  /** بذرة ثابتة لخلط الخيارات — نفس السؤال يُعرض بنفس الترتيب داخل الجلسة. */
   seed: string;
   value: Answer | null;
   onChange: (answer: Answer) => void;
-  /** بعد الضغط على «تحقّق» تُقفل الإجابة ويُكشف الصواب. */
   revealed: boolean;
 };
 
@@ -33,15 +31,12 @@ export function QuestionView(props: QuestionProps) {
   }
 }
 
-/** هل السؤال جاهز للتصحيح؟ تُستعمل لتعطيل زر «تحقّق». */
 export function isAnswerComplete(question: Question, answer: Answer | null): boolean {
   if (!answer || answer.t !== question.t) return false;
   switch (question.t) {
     case 'order':
-      // لا نصحّح حتى يُرتَّب كل العناصر.
       return (answer as Extract<Answer, { t: 'order' }>).sequence.length === question.items.length;
     case 'match': {
-      // كل طرف أيسر موصول بطرف أيمن فعلي (القيمة الفارغة تعني «بانتظار اختيار»).
       const { links } = answer as Extract<Answer, { t: 'match' }>;
       return question.pairs.every(([left]) => !!links[left]);
     }
@@ -50,7 +45,6 @@ export function isAnswerComplete(question: Question, answer: Answer | null): boo
   }
 }
 
-// ── اختيار من متعدد ────────────────────────────────────────────────
 function Mcq({ question, seed, value, onChange, revealed }: QuestionProps & { question: McqItem }) {
   const options = useMemo(
     () => seededShuffle(question.o.map((label, i) => ({ label, i })), seed),
@@ -79,7 +73,6 @@ function Mcq({ question, seed, value, onChange, revealed }: QuestionProps & { qu
   );
 }
 
-// ── صح / خطأ ──────────────────────────────────────────────────────
 function Tf({ question, value, onChange, revealed }: QuestionProps & { question: TfItem }) {
   const picked = value?.t === 'tf' ? value.choice : null;
   return (
@@ -93,7 +86,7 @@ function Tf({ question, value, onChange, revealed }: QuestionProps & { question:
           <Choice
             key={String(option)}
             label={option ? 'صحيحة' : 'خاطئة'}
-            badge={option ? '✓' : '✕'}
+            badge={option ? 'check' : 'cross'}
             tone={tone}
             disabled={revealed}
             onPress={() => onChange({ t: 'tf', choice: option })}
@@ -104,7 +97,6 @@ function Tf({ question, value, onChange, revealed }: QuestionProps & { question:
   );
 }
 
-// ── ملء الفراغ ────────────────────────────────────────────────────
 function Fill({ question, seed, value, onChange, revealed }: QuestionProps & { question: FillItem }) {
   const theme = useTheme();
   const bank = useMemo(() => seededShuffle(question.bank, seed), [question, seed]);
@@ -145,7 +137,6 @@ function Fill({ question, seed, value, onChange, revealed }: QuestionProps & { q
   );
 }
 
-// ── الترتيب ───────────────────────────────────────────────────────
 function Order({ question, seed, value, onChange, revealed }: QuestionProps & { question: OrderItem }) {
   const theme = useTheme();
   const pool = useMemo(() => shuffleAway(question.items, seed), [question, seed]);
@@ -191,13 +182,11 @@ function Order({ question, seed, value, onChange, revealed }: QuestionProps & { 
   );
 }
 
-// ── التوصيل ───────────────────────────────────────────────────────
 function Match({ question, seed, value, onChange, revealed }: QuestionProps & { question: MatchItem }) {
   const theme = useTheme();
   const lefts = useMemo(() => seededShuffle(question.pairs.map((p) => p[0]), `${seed}L`), [question, seed]);
   const rights = useMemo(() => seededShuffle(question.pairs.map((p) => p[1]), `${seed}R`), [question, seed]);
   const links = value?.t === 'match' ? value.links : {};
-  // الطرف الأيسر المنتظر ربطه — نختار يمينًا بعده فيكتمل الزوج.
   const pending = Object.keys(links).find((k) => links[k] === '') ?? null;
 
   const expected = useMemo(
@@ -236,7 +225,7 @@ function Match({ question, seed, value, onChange, revealed }: QuestionProps & { 
           <Choice
             key={left}
             label={left}
-            badge={links[left] ? '•' : undefined}
+            badge={links[left] ? 'dot' : undefined}
             tone={toneFor(left)}
             disabled={revealed}
             onPress={() => tapLeft(left)}

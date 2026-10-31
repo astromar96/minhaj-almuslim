@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { Icon } from '../Icon';
+import { Txt } from '../Txt';
 import { LIP, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
-import { Txt } from '../Txt';
 
 export type ChoiceTone = 'idle' | 'selected' | 'correct' | 'wrong';
 
@@ -10,10 +11,9 @@ type Props = {
   tone: ChoiceTone;
   onPress: () => void;
   disabled?: boolean;
-  badge?: string;
+  badge?: 'check' | 'cross' | 'dot';
 };
 
-/** بطاقة خيار — تستعمل في الاختيار من متعدد، وصح/خطأ، وملء الفراغ. */
 export function Choice({ label, tone, onPress, disabled, badge }: Props) {
   const theme = useTheme();
   const look = {
@@ -35,9 +35,13 @@ export function Choice({ label, tone, onPress, disabled, badge }: Props) {
       >
         {badge ? (
           <View style={[styles.badge, { borderColor: look.border }]}>
-            <Txt size="caption" weight="bold" color={look.ink}>
-              {badge}
-            </Txt>
+            {badge === 'dot' ? (
+              <Txt size="caption" weight="bold" color={look.ink}>
+                •
+              </Txt>
+            ) : (
+              <Icon name={badge === 'check' ? 'true' : 'false'} size={14} color={look.ink} />
+            )}
           </View>
         ) : null}
         <Txt weight="medium" color={look.ink} style={styles.label}>

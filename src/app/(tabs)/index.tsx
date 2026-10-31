@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AnimatedBar } from '@/components/AnimatedBar';
 import { shade } from '@/components/Button';
 import { Hud } from '@/components/Hud';
 import { Txt } from '@/components/Txt';
@@ -65,7 +66,6 @@ export default function HomeScreen() {
   );
 }
 
-/** بطاقة باب — عنوانه ونبذته وتقدّمه. الضغط يفتح مسار دروسه. */
 function SectionCard({ section, onPress }: { section: Section; onPress: () => void }) {
   const theme = useTheme();
   const { isDone } = useProgress();
@@ -112,9 +112,14 @@ function SectionCard({ section, onPress }: { section: Section; onPress: () => vo
         </Txt>
         {empty ? null : (
           <>
-            <View style={styles.bar}>
-              <View style={[styles.barFill, { width: `${pct}%` }]} />
-            </View>
+            <AnimatedBar
+              pct={pct}
+              height={10}
+              trackColor="rgba(0,0,0,0.18)"
+              fillColor="#ffffff"
+              fillOpacity={0.9}
+              style={{ marginTop: space.sm }}
+            />
             <Txt size="caption" color={ink} style={styles.dim}>
               {counted(section.units.length, UNIT)} · {counted(nodes.length, LESSON)}
             </Txt>
@@ -141,7 +146,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   overallFill: {
-    // يبدأ الامتلاء من اليمين، موافقةً لاتجاه القراءة.
     position: 'absolute',
     right: 0,
     top: 0,
@@ -160,14 +164,5 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   dim: { opacity: 0.85 },
-  bar: {
-    width: '100%',
-    height: 10,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(0,0,0,0.18)',
-    overflow: 'hidden',
-    marginTop: space.sm,
-  },
-  barFill: { position: 'absolute', right: 0, top: 0, bottom: 0, backgroundColor: '#ffffff', opacity: 0.9 },
   note: { marginTop: space.xl, paddingHorizontal: space.md },
 });
