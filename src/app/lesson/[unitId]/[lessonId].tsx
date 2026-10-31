@@ -200,6 +200,7 @@ export default function LessonScreen() {
       </View>
 
       <ScrollView
+        style={styles.fill}
         contentContainerStyle={[styles.body, { paddingBottom: space.xxl }]}
         showsVerticalScrollIndicator={false}
       >
