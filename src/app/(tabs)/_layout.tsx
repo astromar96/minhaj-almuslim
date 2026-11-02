@@ -6,7 +6,8 @@ import { font, palette } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 /** أيقونة وسطر عربي بـ lineHeight ١٨ لا يسعهما ارتفاع الشريط الافتراضي (٤٩). */
-const BAR_CONTENT_HEIGHT = 62;
+const BAR_CONTENT_HEIGHT = 68;
+const ITEM_HEIGHT = 56;
 
 export default function TabLayout() {
   const theme = useTheme();
@@ -18,8 +19,12 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: palette.emerald,
         tabBarInactiveTintColor: theme.inkFaint,
-        tabBarLabelStyle: { fontFamily: font.bold, fontSize: 12, lineHeight: 18 },
-        tabBarIconStyle: { marginTop: 2 },
+        // بلا flexShrink: 0 ينكمش السطر إلى ٩ بكسل داخل العنصر ويُقصّ، لأنّ
+        // overflow: hidden مضروب عليه من numberOfLines={1}.
+        // حروف Cairo العربية تطلب ٢٠ بكسل عند حجم ١٢، لا ١٨.
+        tabBarLabelStyle: { fontFamily: font.bold, fontSize: 12, lineHeight: 22, flexShrink: 0 },
+        tabBarIconStyle: { marginTop: 2, flexShrink: 0 },
+        tabBarItemStyle: { height: ITEM_HEIGHT, paddingTop: 3, paddingBottom: 3 },
         tabBarStyle: {
           backgroundColor: theme.bg,
           borderTopColor: theme.border,
