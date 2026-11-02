@@ -9,7 +9,6 @@ import {
   type ScrollViewInstance,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path as SvgPath } from 'react-native-svg';
 import { AnimatedBar } from '@/components/AnimatedBar';
 import { Hud } from '@/components/Hud';
 import { Icon } from '@/components/Icon';
@@ -26,19 +25,6 @@ import { useTheme } from '@/theme/useTheme';
 const WEAVE = [0, 1, 0, -1];
 const WEAVE_PX = 56;
 
-/** مركز الدائرة من أعلى صفّها: صندوقها ٧٢ وحافتُه ٤، فالمنتصف ٣٨. */
-const NODE_CENTER = 38;
-
-type Point = { x: number; y: number };
-
-/**
- * منحنى من عقدة إلى التي تليها. ضابطا المنحنى رأسيّان تحت الأولى وفوق الثانية،
- * فيخرج الطريق من أسفل الدائرة ويدخل الأخرى من أعلاها بلا زاوية حادّة.
- */
-function curve(a: Point, b: Point): string {
-  const k = (b.y - a.y) * 0.45;
-  return `M ${a.x} ${a.y} C ${a.x} ${a.y + k}, ${b.x} ${b.y - k}, ${b.x} ${b.y}`;
-}
 
 export async function generateStaticParams(): Promise<Record<string, string>[]> {
   return curriculum.sections.map((section) => ({ sectionId: section.id }));
@@ -128,7 +114,6 @@ export default function SectionScreen() {
         unit={unit}
         nodes={nodes}
         currentIndex={currentIndex}
-        isDone={isDone}
         onUnitTop={noteUnitTop}
         onCurrentRow={noteCurrentRow}
         onOpen={(unitId, lessonId) => router.push(`/lesson/${unitId}/${lessonId}`)}
@@ -202,7 +187,6 @@ function UnitLessons({
   unit,
   nodes,
   currentIndex,
-  isDone,
   onUnitTop,
   onCurrentRow,
   onOpen,
@@ -210,7 +194,6 @@ function UnitLessons({
   unit: Unit;
   nodes: ReturnType<typeof flatten>;
   currentIndex: number;
-  isDone: (key: string) => boolean;
   onUnitTop: (unitId: string, y: number) => void;
   onCurrentRow: (unitId: string, y: number) => void;
   onOpen: (unitId: string, lessonId: string) => void;
@@ -218,56 +201,11 @@ function UnitLessons({
   const theme = useTheme();
   const tint = unitColors[unit.color] ?? unitColors.green;
 
-  // الطريق يُرسم خطًّا واحدًا متّصلًا خلف العقد، فيلزم قياسُ مواضعها أوّلًا.
-  const [box, setBox] = useState({ w: 0, h: 0 });
-  const [tops, setTops] = useState<number[]>([]);
-
-  const noteRow = useCallback((index: number, y: number) => {
-    setTops((prev) => {
-      if (prev[index] === y) return prev;
-      const next = prev.slice();
-      next[index] = y;
-      return next;
-    });
-  }, []);
-
-  const unitStart = nodes.findIndex((n) => n.unit.id === unit.id);
-  const drawn = box.w > 0 && unit.lessons.every((_, i) => tops[i] !== undefined);
-  const center = (i: number) => ({
-    x: box.w / 2 + WEAVE[i % WEAVE.length] * WEAVE_PX,
-    y: tops[i] + NODE_CENTER,
-  });
-
   return (
     <View
       style={styles.unit}
-      onLayout={(e: LayoutChangeEvent) => {
-        const { y, width, height } = e.nativeEvent.layout;
-        onUnitTop(unit.id, y);
-        setBox((prev) => (prev.w === width && prev.h === height ? prev : { w: width, h: height }));
-      }}
+      onLayout={(e: LayoutChangeEvent) => onUnitTop(unit.id, e.nativeEvent.layout.y)}
     >
-      {drawn ? (
-        <Svg width={box.w} height={box.h} style={styles.path} pointerEvents="none">
-          {unit.lessons.slice(1).map((_, i) => {
-            const a = center(i);
-            const b = center(i + 1);
-            const walked = isDone(nodes[unitStart + i].key);
-            return (
-              <SvgPath
-                key={i}
-                d={curve(a, b)}
-                fill="none"
-                stroke={walked ? tint.base : theme.border}
-                strokeOpacity={walked ? 1 : 0.45}
-                strokeWidth={7}
-                strokeLinecap="round"
-              />
-            );
-          })}
-        </Svg>
-      ) : null}
-
       {unit.lessons.map((lesson, lessonIndex) => {
         const flatIndex = nodes.findIndex((n) => n.unit.id === unit.id && n.lesson.id === lesson.id);
         const state: NodeState =
@@ -277,11 +215,11 @@ function UnitLessons({
           <View
             key={lesson.id}
             style={[styles.row, { transform: [{ translateX: offset }] }]}
-            onLayout={(e: LayoutChangeEvent) => {
-              const y = e.nativeEvent.layout.y;
-              noteRow(lessonIndex, y);
-              if (flatIndex === currentIndex && currentIndex > 0) onCurrentRow(unit.id, y);
-            }}
+            onLayout={
+              flatIndex === currentIndex && currentIndex > 0
+                ? (e: LayoutChangeEvent) => onCurrentRow(unit.id, e.nativeEvent.layout.y)
+                : undefined
+            }
           >
             <PathNodeButton
               index={lessonIndex}
@@ -330,8 +268,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: 2,
   },
-  row: { marginVertical: space.md },
-  path: { position: 'absolute', top: 0, left: 0 },
+  row: { marginVertical: space.sm },
   divider: {
     height: 1,
     alignSelf: 'stretch',
