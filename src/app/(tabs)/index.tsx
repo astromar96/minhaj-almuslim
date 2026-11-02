@@ -89,11 +89,12 @@ function ResumeCard({ started }: { started: boolean }) {
   if (!target) return null;
 
   const { section, node } = target;
-  const tint = unitColors[section.color] ?? unitColors.green;
+  // أخضر العلامة لا لون الباب: لولاه لذاب في بطاقة الباب التي تليه مباشرة.
+  const tint = palette.emerald;
 
   return (
     <View style={styles.cardWrap}>
-      <View style={[styles.cardLip, { backgroundColor: shade(tint.base) }]} />
+      <View style={[styles.cardLip, { backgroundColor: shade(tint) }]} />
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${started ? 'تابع' : 'ابدأ'}: ${node.lesson.title}`}
@@ -103,7 +104,7 @@ function ResumeCard({ started }: { started: boolean }) {
         style={[
           styles.card,
           styles.resume,
-          { backgroundColor: tint.base, transform: [{ translateY: down ? LIP : 0 }] },
+          { backgroundColor: tint, transform: [{ translateY: down ? LIP : 0 }] },
         ]}
       >
         <View style={styles.cardHead}>
