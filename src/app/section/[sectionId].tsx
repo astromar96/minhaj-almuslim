@@ -9,7 +9,7 @@ import {
   type ScrollViewInstance,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Line } from 'react-native-svg';
+import Svg, { Path as SvgPath } from 'react-native-svg';
 import { AnimatedBar } from '@/components/AnimatedBar';
 import { Hud } from '@/components/Hud';
 import { Icon } from '@/components/Icon';
@@ -28,6 +28,17 @@ const WEAVE_PX = 56;
 
 /** مركز الدائرة من أعلى صفّها: صندوقها ٧٢ وحافتُه ٤، فالمنتصف ٣٨. */
 const NODE_CENTER = 38;
+
+type Point = { x: number; y: number };
+
+/**
+ * منحنى من عقدة إلى التي تليها. ضابطا المنحنى رأسيّان تحت الأولى وفوق الثانية،
+ * فيخرج الطريق من أسفل الدائرة ويدخل الأخرى من أعلاها بلا زاوية حادّة.
+ */
+function curve(a: Point, b: Point): string {
+  const k = (b.y - a.y) * 0.45;
+  return `M ${a.x} ${a.y} C ${a.x} ${a.y + k}, ${b.x} ${b.y - k}, ${b.x} ${b.y}`;
+}
 
 export async function generateStaticParams(): Promise<Record<string, string>[]> {
   return curriculum.sections.map((section) => ({ sectionId: section.id }));
@@ -243,12 +254,10 @@ function UnitLessons({
             const b = center(i + 1);
             const walked = isDone(nodes[unitStart + i].key);
             return (
-              <Line
+              <SvgPath
                 key={i}
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
+                d={curve(a, b)}
+                fill="none"
                 stroke={walked ? tint.base : theme.border}
                 strokeOpacity={walked ? 1 : 0.45}
                 strokeWidth={7}
