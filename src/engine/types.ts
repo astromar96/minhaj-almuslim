@@ -92,6 +92,19 @@ export function allLessons(curriculum: Curriculum): PathNode[] {
   return curriculum.sections.flatMap(flatten);
 }
 
+/** أوّل درس لم يُتمّ بعدُ مع بابه — وجهة زرّ «تابع» في الصفحة الأولى. */
+export function nextLesson(
+  curriculum: Curriculum,
+  isDone: (key: string) => boolean,
+): { section: Section; node: PathNode } | null {
+  for (const section of curriculum.sections) {
+    for (const node of flatten(section)) {
+      if (!isDone(node.key)) return { section, node };
+    }
+  }
+  return null;
+}
+
 /** كل وحدات الكتاب مسطَّحة — للبحث عن درس من معرّفه. */
 export function allUnits(curriculum: Curriculum): Unit[] {
   return curriculum.sections.flatMap((section) => section.units);

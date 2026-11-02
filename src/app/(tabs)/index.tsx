@@ -6,10 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedBar } from '@/components/AnimatedBar';
 import { shade } from '@/components/Button';
 import { Hud } from '@/components/Hud';
+import { Icon } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
 import { curriculum } from '@/content';
 import { counted, LESSON, UNIT } from '@/engine/arabic';
-import { allLessons, flatten, type Section } from '@/engine/types';
+import { allLessons, flatten, nextLesson, type Section } from '@/engine/types';
 import { useProgress } from '@/store/progress';
 import { LIP, radius, space, unitColors } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
@@ -60,6 +61,8 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        <ResumeCard started={done > 0} />
+
         {curriculum.sections.map((section) => (
           <SectionCard
             key={section.id}
@@ -72,6 +75,50 @@ export default function HomeScreen() {
           {curriculum.meta.note}
         </Txt>
       </ScrollView>
+    </View>
+  );
+}
+
+/** مدخل مباشر إلى أوّل درس لم يُتمّ — بدونه يبدأ الزائر من قائمة أبواب لا من درس. */
+function ResumeCard({ started }: { started: boolean }) {
+  const router = useRouter();
+  const { isDone } = useProgress();
+  const [down, setDown] = useState(false);
+
+  const target = useMemo(() => nextLesson(curriculum, isDone), [isDone]);
+  if (!target) return null;
+
+  const { section, node } = target;
+  const tint = unitColors[section.color] ?? unitColors.green;
+
+  return (
+    <View style={styles.cardWrap}>
+      <View style={[styles.cardLip, { backgroundColor: shade(tint.base) }]} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${started ? 'تابع' : 'ابدأ'}: ${node.lesson.title}`}
+        onPressIn={() => setDown(true)}
+        onPressOut={() => setDown(false)}
+        onPress={() => router.push(`/lesson/${node.unit.id}/${node.lesson.id}`)}
+        style={[
+          styles.card,
+          styles.resume,
+          { backgroundColor: tint.base, transform: [{ translateY: down ? LIP : 0 }] },
+        ]}
+      >
+        <View style={styles.cardHead}>
+          <Txt size="caption" weight="bold" color="#ffffff" style={styles.dim}>
+            {started ? 'تابع من حيث وقفت' : 'ابدأ من هنا'}
+          </Txt>
+          <Icon name="arrow-forward" size={20} color="#ffffff" />
+        </View>
+        <Txt weight="black" size="title" color="#ffffff">
+          {node.lesson.title}
+        </Txt>
+        <Txt size="caption" color="#ffffff" style={styles.dim}>
+          {section.title} · {node.unit.title}
+        </Txt>
+      </Pressable>
     </View>
   );
 }
@@ -173,6 +220,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
   },
+  resume: { gap: space.xs },
   dim: { opacity: 0.85 },
   note: { marginTop: space.xl, paddingHorizontal: space.md },
 });
