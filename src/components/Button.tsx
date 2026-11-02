@@ -1,11 +1,12 @@
 import * as Haptics from 'expo-haptics';
 import { useCallback, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
-import { LIP, radius, space } from '@/theme/tokens';
+import { LIP, palette, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
+import { Icon, type IconName } from './Icon';
 import { Txt } from './Txt';
 
-type Variant = 'primary' | 'danger' | 'ghost' | 'neutral';
+type Variant = 'primary' | 'danger' | 'ghost' | 'neutral' | 'outline';
 
 type Props = {
   label: string;
@@ -13,6 +14,7 @@ type Props = {
   variant?: Variant;
   disabled?: boolean;
   tint?: string;
+  icon?: IconName;
   style?: ViewStyle;
 };
 
@@ -20,15 +22,16 @@ type Props = {
  * زر بحافة سفلية تغوص عند الضغط — هو ما يعطي الواجهة طابعها اللعبي.
  * الحافة جزء من ارتفاع الزر، فيُزاح المحتوى لأسفل بدل أن يتغيّر حجم الصندوق.
  */
-export function Button({ label, onPress, variant = 'primary', disabled, tint, style }: Props) {
+export function Button({ label, onPress, variant = 'primary', disabled, tint, icon, style }: Props) {
   const theme = useTheme();
   const [down, setDown] = useState(false);
 
   const colors: Record<Variant, { fill: string; lip: string; ink: string; border?: string }> = {
-    primary: { fill: tint ?? '#17a673', lip: shade(tint ?? '#17a673'), ink: '#ffffff' },
+    primary: { fill: tint ?? palette.emerald, lip: shade(tint ?? palette.emerald), ink: '#ffffff' },
     danger: { fill: '#e5484d', lip: shade('#e5484d'), ink: '#ffffff' },
     neutral: { fill: theme.surfaceAlt, lip: theme.borderStrong, ink: theme.ink },
     ghost: { fill: 'transparent', lip: 'transparent', ink: theme.inkSoft, border: theme.border },
+    outline: { fill: theme.surface, lip: theme.borderStrong, ink: theme.ink, border: theme.border },
   };
   const c = colors[variant];
 
@@ -60,6 +63,7 @@ export function Button({ label, onPress, variant = 'primary', disabled, tint, st
           c.border ? { borderWidth: 2, borderColor: c.border } : null,
         ]}
       >
+        {icon ? <Icon name={icon} size={20} color={disabled ? theme.lockedInk : c.ink} /> : null}
         <Txt weight="bold" size="body" center color={disabled ? theme.lockedInk : c.ink}>
           {label}
         </Txt>
@@ -93,6 +97,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     paddingVertical: space.md + 2,
     paddingHorizontal: space.lg,
+    flexDirection: 'row-reverse',
+    gap: space.sm,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 52,

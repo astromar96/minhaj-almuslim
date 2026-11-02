@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
+import { type IconName } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
 import { counted, LESSON } from '@/engine/arabic';
 import { useAuth, type SocialProvider } from '@/store/auth';
@@ -15,9 +16,10 @@ const PROVIDER_LABEL: Record<SocialProvider, string> = {
   apple: 'المتابعة بحساب Apple',
 };
 
-const PROVIDER_TINT: Record<SocialProvider, string> = {
-  google: '#4285f4',
-  apple: '#3a3a3c',
+/** زرّ جوجل بسطح محايد وعلامته الأصلية — إرشادات جوجل تمنع زرًّا أزرق بلا علامة. */
+const PROVIDER_ICON: Record<SocialProvider, IconName | undefined> = {
+  google: 'google',
+  apple: undefined,
 };
 
 export default function AccountScreen() {
@@ -158,7 +160,8 @@ function SignIn({
         <Button
           key={provider}
           label={PROVIDER_LABEL[provider]}
-          tint={PROVIDER_TINT[provider]}
+          variant="outline"
+          icon={PROVIDER_ICON[provider]}
           disabled={busy}
           onPress={async () => {
             if (await signInWithProvider(provider)) onDone();
@@ -175,10 +178,17 @@ function SignIn({
       </View>
 
       {newAccount ? (
-        <Field label="الاسم" value={name} onChange={change(setName)} autoComplete="name" />
+        <Field
+          label="الاسم"
+          placeholder="اسمك"
+          value={name}
+          onChange={change(setName)}
+          autoComplete="name"
+        />
       ) : null}
       <Field
         label="البريد"
+        placeholder="name@example.com"
         value={email}
         onChange={change(setEmail)}
         keyboardType="email-address"
@@ -187,6 +197,7 @@ function SignIn({
       />
       <Field
         label="كلمة المرور"
+        placeholder="ستّة أحرف فأكثر"
         value={password}
         onChange={change(setPassword)}
         secureTextEntry
