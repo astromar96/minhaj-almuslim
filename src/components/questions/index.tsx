@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import type { Answer } from '@/engine/grade';
 import { seededShuffle, shuffleAway } from '@/engine/shuffle';
 import type { FillItem, MatchItem, McqItem, OrderItem, Question, TfItem } from '@/engine/types';
-import { radius, space } from '@/theme/tokens';
+import { palette, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 import { Txt } from '../Txt';
 import { Choice, type ChoiceTone } from './Choice';
@@ -111,7 +111,7 @@ function Fill({ question, seed, value, onChange, revealed }: QuestionProps & { q
           <Txt
             size="lead"
             weight="bold"
-            color={revealed ? (picked === question.a ? theme.correctInk : theme.wrongInk) : '#17a673'}
+            color={revealed ? (picked === question.a ? theme.correctInk : theme.wrongInk) : palette.emerald}
           >
             {picked ?? '______'}
           </Txt>
@@ -262,7 +262,7 @@ function Token({ label, tone, onPress }: { label: string; tone: ChoiceTone; onPr
   const theme = useTheme();
   const look = {
     idle: { bg: theme.surface, border: theme.border, ink: theme.ink },
-    selected: { bg: theme.surfaceAlt, border: '#17a673', ink: theme.ink },
+    selected: { bg: theme.surfaceAlt, border: palette.emerald, ink: theme.ink },
     correct: { bg: theme.correctBg, border: theme.correctInk, ink: theme.correctInk },
     wrong: { bg: theme.wrongBg, border: theme.wrongInk, ink: theme.wrongInk },
   }[tone];

@@ -12,7 +12,7 @@ import { curriculum } from '@/content';
 import { counted, LESSON, UNIT } from '@/engine/arabic';
 import { allLessons, flatten, nextLesson, type Section } from '@/engine/types';
 import { useProgress } from '@/store/progress';
-import { LIP, radius, space, unitColors } from '@/theme/tokens';
+import { LIP, palette, radius, space, unitColors } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 import { ONBOARDED_KEY } from '@/app/welcome';
 
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: '#17a673',
+    backgroundColor: palette.emerald,
     opacity: 0.25,
   },
   overallLabel: { width: '100%' },

@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon } from '../Icon';
 import { Txt } from '../Txt';
-import { LIP, radius, space } from '@/theme/tokens';
+import { LIP, palette, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 export type ChoiceTone = 'idle' | 'selected' | 'correct' | 'wrong';
@@ -18,7 +18,7 @@ export function Choice({ label, tone, onPress, disabled, badge }: Props) {
   const theme = useTheme();
   const look = {
     idle: { bg: theme.surface, border: theme.border, ink: theme.ink },
-    selected: { bg: theme.surface, border: '#17a673', ink: '#17a673' },
+    selected: { bg: theme.surface, border: palette.emerald, ink: palette.emerald },
     correct: { bg: theme.correctBg, border: theme.correctInk, ink: theme.correctInk },
     wrong: { bg: theme.wrongBg, border: theme.wrongInk, ink: theme.wrongInk },
   }[tone];
