@@ -21,6 +21,7 @@ import {
   itemKey,
   progress as sessionProgress,
   startSession,
+  stepNumber,
   type Session,
 } from '@/engine/session';
 import { allUnits, isQuestion } from '@/engine/types';
@@ -205,10 +206,8 @@ export default function LessonScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Txt size="caption" color={theme.inkFaint}>
-          {unit.title} ·{' '}
-          {item.t === 'info'
-            ? 'بطاقة تعليمية'
-            : `السؤال ${Math.min(session.cleared + 1, session.totalQuestions)} من ${session.totalQuestions}`}
+          {unit.title} · {item.t === 'info' ? 'بطاقة' : 'سؤال'} {stepNumber(session)} من{' '}
+          {session.totalSteps}
         </Txt>
 
         {item.t === 'info' ? (
