@@ -26,10 +26,8 @@ import { useTheme } from '@/theme/useTheme';
 const WEAVE = [0, 1, 0, -1];
 const WEAVE_PX = 56;
 
-/** ارتفاع الوصلة بين عقدتين، وعرض لوحتها: خليّة العقدة زائد تمايل الجانبين. */
-const LINK_H = 26;
-const CELL_W = 124;
-const LINK_W = CELL_W + WEAVE_PX * 2;
+/** مركز الدائرة من أعلى صفّها: صندوقها ٧٢ وحافتُه ٤، فالمنتصف ٣٨. */
+const NODE_CENTER = 38;
 
 export async function generateStaticParams(): Promise<Record<string, string>[]> {
   return curriculum.sections.map((section) => ({ sectionId: section.id }));
@@ -189,24 +187,6 @@ function UnitBanner({ unit, unitIndex }: { unit: Unit; unitIndex: number }) {
   );
 }
 
-/** وصلة مائلة من العقدة السابقة إلى هذه — تُصمت ما دام ما قبلها لم يُتمّ. */
-function Link({ shift, color }: { shift: number; color: string }) {
-  const mid = LINK_W / 2;
-  return (
-    <Svg width={LINK_W} height={LINK_H} style={[styles.link, { left: (CELL_W - LINK_W) / 2 }]}>
-      <Line
-        x1={mid + shift}
-        y1={0}
-        x2={mid}
-        y2={LINK_H}
-        stroke={color}
-        strokeWidth={6}
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
-}
-
 function UnitLessons({
   unit,
   nodes,
@@ -227,36 +207,73 @@ function UnitLessons({
   const theme = useTheme();
   const tint = unitColors[unit.color] ?? unitColors.green;
 
+  // الطريق يُرسم خطًّا واحدًا متّصلًا خلف العقد، فيلزم قياسُ مواضعها أوّلًا.
+  const [box, setBox] = useState({ w: 0, h: 0 });
+  const [tops, setTops] = useState<number[]>([]);
+
+  const noteRow = useCallback((index: number, y: number) => {
+    setTops((prev) => {
+      if (prev[index] === y) return prev;
+      const next = prev.slice();
+      next[index] = y;
+      return next;
+    });
+  }, []);
+
+  const unitStart = nodes.findIndex((n) => n.unit.id === unit.id);
+  const drawn = box.w > 0 && unit.lessons.every((_, i) => tops[i] !== undefined);
+  const center = (i: number) => ({
+    x: box.w / 2 + WEAVE[i % WEAVE.length] * WEAVE_PX,
+    y: tops[i] + NODE_CENTER,
+  });
+
   return (
     <View
       style={styles.unit}
-      onLayout={(e: LayoutChangeEvent) => onUnitTop(unit.id, e.nativeEvent.layout.y)}
+      onLayout={(e: LayoutChangeEvent) => {
+        const { y, width, height } = e.nativeEvent.layout;
+        onUnitTop(unit.id, y);
+        setBox((prev) => (prev.w === width && prev.h === height ? prev : { w: width, h: height }));
+      }}
     >
+      {drawn ? (
+        <Svg width={box.w} height={box.h} style={styles.path} pointerEvents="none">
+          {unit.lessons.slice(1).map((_, i) => {
+            const a = center(i);
+            const b = center(i + 1);
+            const walked = isDone(nodes[unitStart + i].key);
+            return (
+              <Line
+                key={i}
+                x1={a.x}
+                y1={a.y}
+                x2={b.x}
+                y2={b.y}
+                stroke={walked ? tint.base : theme.border}
+                strokeOpacity={walked ? 1 : 0.45}
+                strokeWidth={7}
+                strokeLinecap="round"
+              />
+            );
+          })}
+        </Svg>
+      ) : null}
+
       {unit.lessons.map((lesson, lessonIndex) => {
         const flatIndex = nodes.findIndex((n) => n.unit.id === unit.id && n.lesson.id === lesson.id);
         const state: NodeState =
           flatIndex < currentIndex ? 'done' : flatIndex === currentIndex ? 'current' : 'locked';
         const offset = WEAVE[lessonIndex % WEAVE.length] * WEAVE_PX;
-        const prevOffset = WEAVE[(lessonIndex - 1 + WEAVE.length) % WEAVE.length] * WEAVE_PX;
-        const prev = lessonIndex > 0 ? nodes[flatIndex - 1] : null;
-        const linked = !!prev && isDone(prev.key);
         return (
           <View
             key={lesson.id}
-            style={[
-              styles.row,
-              lessonIndex > 0 && { marginTop: LINK_H },
-              { transform: [{ translateX: offset }] },
-            ]}
-            onLayout={
-              flatIndex === currentIndex && currentIndex > 0
-                ? (e: LayoutChangeEvent) => onCurrentRow(unit.id, e.nativeEvent.layout.y)
-                : undefined
-            }
+            style={[styles.row, { transform: [{ translateX: offset }] }]}
+            onLayout={(e: LayoutChangeEvent) => {
+              const y = e.nativeEvent.layout.y;
+              noteRow(lessonIndex, y);
+              if (flatIndex === currentIndex && currentIndex > 0) onCurrentRow(unit.id, y);
+            }}
           >
-            {lessonIndex > 0 ? (
-              <Link shift={prevOffset - offset} color={linked ? tint.base : theme.border} />
-            ) : null}
             <PathNodeButton
               index={lessonIndex}
               label={lesson.title}
@@ -304,8 +321,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: 2,
   },
-  row: { marginVertical: space.sm },
-  link: { position: 'absolute', top: -LINK_H, height: LINK_H },
+  row: { marginVertical: space.md },
+  path: { position: 'absolute', top: 0, left: 0 },
   divider: {
     height: 1,
     alignSelf: 'stretch',
