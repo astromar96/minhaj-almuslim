@@ -8,8 +8,14 @@ import { Txt } from '@/components/Txt';
 import { counted, LESSON } from '@/engine/arabic';
 import { useAuth, type SocialProvider } from '@/store/auth';
 import { useProgress } from '@/store/progress';
-import { radius, space } from '@/theme/tokens';
-import { useTheme } from '@/theme/useTheme';
+import { palette, radius, space } from '@/theme/tokens';
+import {
+  TEXT_SCALES,
+  useTextScale,
+  useTheme,
+  useThemePref,
+  type ThemePref,
+} from '@/theme/useTheme';
 
 const PROVIDER_LABEL: Record<SocialProvider, string> = {
   google: 'المتابعة بحساب Google',
@@ -73,6 +79,8 @@ export default function AccountScreen() {
         ) : (
           <SignIn guest={!!account?.guest} busy={busy} social={social} onDone={goHome} onTyping={clearError} />
         )}
+
+        <Settings />
       </ScrollView>
     </View>
   );
@@ -265,6 +273,83 @@ function SignIn({
   );
 }
 
+const SCALE_LABEL = ['عادي', 'كبير', 'أكبر'];
+
+function Settings() {
+  const theme = useTheme();
+  const { pref, setPref } = useThemePref();
+  const { scale, setScale } = useTextScale();
+
+  return (
+    <View style={styles.block}>
+      <View style={[styles.line, { backgroundColor: theme.border, marginVertical: space.md }]} />
+      <Txt weight="bold" size="lead">
+        الإعدادات
+      </Txt>
+
+      <Txt size="caption" color={theme.inkSoft}>
+        المظهر
+      </Txt>
+      <Segmented
+        value={pref}
+        onPick={(key) => setPref(key as ThemePref)}
+        options={[
+          { key: 'system', label: 'النظام' },
+          { key: 'light', label: 'فاتح' },
+          { key: 'dark', label: 'داكن' },
+        ]}
+      />
+
+      <Txt size="caption" color={theme.inkSoft}>
+        حجم النصّ
+      </Txt>
+      <Segmented
+        value={String(scale)}
+        onPick={(key) => setScale(Number(key))}
+        options={TEXT_SCALES.map((s, i) => ({ key: String(s), label: SCALE_LABEL[i] }))}
+      />
+    </View>
+  );
+}
+
+function Segmented({
+  options,
+  value,
+  onPick,
+}: {
+  options: { key: string; label: string }[];
+  value: string;
+  onPick: (key: string) => void;
+}) {
+  const theme = useTheme();
+  return (
+    <View style={styles.segment}>
+      {options.map((option) => {
+        const active = option.key === value;
+        return (
+          <Pressable
+            key={option.key}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
+            onPress={() => onPick(option.key)}
+            style={[
+              styles.segmentItem,
+              {
+                backgroundColor: active ? palette.emerald : theme.surface,
+                borderColor: active ? palette.emerald : theme.border,
+              },
+            ]}
+          >
+            <Txt size="small" weight="bold" center color={active ? '#ffffff' : theme.inkSoft}>
+              {option.label}
+            </Txt>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 function Field({
   label,
   value,
@@ -315,6 +400,14 @@ const styles = StyleSheet.create({
   rule: { flexDirection: 'row-reverse', alignItems: 'center', gap: space.sm },
   line: { flex: 1, height: StyleSheet.hairlineWidth },
   field: { gap: space.xs },
+  segment: { flexDirection: 'row-reverse', gap: space.sm },
+  segmentItem: {
+    flex: 1,
+    borderWidth: 2,
+    borderRadius: radius.md,
+    paddingVertical: space.sm,
+    alignItems: 'center',
+  },
   input: {
     borderWidth: 1,
     borderRadius: radius.md,

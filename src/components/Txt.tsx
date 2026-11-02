@@ -1,6 +1,6 @@
 import { StyleSheet, Text, type TextProps, type TextStyle } from 'react-native';
 import { font, size } from '@/theme/tokens';
-import { useTheme } from '@/theme/useTheme';
+import { useTextScale, useTheme } from '@/theme/useTheme';
 
 type Weight = keyof typeof font;
 type Size = keyof typeof size;
@@ -19,14 +19,16 @@ type Props = TextProps & {
  */
 export function Txt({ weight = 'regular', size: s = 'body', color, center, style, ...rest }: Props) {
   const theme = useTheme();
+  const { scale } = useTextScale();
+  const fontSize = Math.round(size[s] * scale);
   return (
     <Text
       {...rest}
       style={[
         styles.base,
-        { fontFamily: font[weight], fontSize: size[s], color: color ?? theme.ink },
+        { fontFamily: font[weight], fontSize, color: color ?? theme.ink },
         // ارتفاع السطر يتبع حجم الخط: العربية تحتاج فسحة أكبر من اللاتينية.
-        { lineHeight: Math.round(size[s] * 1.7) },
+        { lineHeight: Math.round(fontSize * 1.7) },
         center && styles.center,
         style,
       ]}
