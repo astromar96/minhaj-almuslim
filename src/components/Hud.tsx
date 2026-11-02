@@ -16,7 +16,8 @@ function countdown(ms: number): string {
 export function Hud() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { streak, xp, hearts, nextHeartMs } = useProgress();
+  const { streak, xp, hearts, nextHeartMs, doneCount } = useProgress();
+  const started = doneCount > 0 || xp > 0 || streak > 0;
 
   return (
     <View
@@ -25,8 +26,13 @@ export function Hud() {
         { paddingTop: insets.top + space.sm, backgroundColor: theme.bg, borderBottomColor: theme.border },
       ]}
     >
-      <Stat icon="fire" value={String(streak)} tint={palette.orange} />
-      <Stat icon="gem" value={String(xp)} tint={palette.gold} />
+      {/* صفٌّ من الأصفار لا يعلّم الوافد شيئًا، فلا يظهر العدّادان قبل أوّل درس. */}
+      {started ? (
+        <>
+          <Stat icon="fire" value={String(streak)} tint={palette.orange} />
+          <Stat icon="gem" value={String(xp)} tint={palette.gold} />
+        </>
+      ) : null}
       <Stat
         icon="heart"
         value={String(hearts)}
